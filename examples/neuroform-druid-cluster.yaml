@@ -88,8 +88,8 @@ spec:
        properties: |-
          druid.metadata.storage.type=postgresql
          druid.metadata.storage.connector.connectURI=jdbc:postgresql://druid-metadata.pgo.svc.cluster.local:5432/druid-metadata
-         druid.metadata.storage.connector.user=PGADMIN_USERNAME_PLACEHOLDER
-         druid.metadata.storage.connector.password=PGADMIN_PASSWORD_PLACEHOLDER
+         druid.metadata.storage.connector.user=POSTGRES_ADMIN_USERNAME_PLACEHOLDER
+         druid.metadata.storage.connector.password=POSTGRES_ADMIN_PASSWORD_PLACEHOLDER
          druid.metadata.storage.connector.createTables=true
      type: default
   zookeeper:
