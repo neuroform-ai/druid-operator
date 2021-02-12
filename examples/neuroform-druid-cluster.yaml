@@ -65,6 +65,7 @@ spec:
     ##################################################
     # Monitoring ( enable when using prometheus )
     #################################################
+
     ################################################
     # Extensions
     ################################################
@@ -82,27 +83,19 @@ spec:
         druid.storage.storageDirectory=/druid/data/deepstorage
         druid.indexer.logs.directory=data/logs/
     type: default
-  # metadataStore:
-  #   spec:
-  #     properties: |-
-  #       druid.metadata.storage.type=postgresql
-  #       druid.metadata.storage.connector.connectURI=jdbc:postgresql://postgres.druid.svc.cluster.local:5432/druiddb
-  #       druid.metadata.storage.connector.password=admin123
-  #       druid.metadata.storage.connector.createTables=true
-    # type: default
   metadataStore:
-    spec:
-      properties: |-
-        druid.metadata.storage.type=derby
-        druid.metadata.storage.connector.connectURI=jdbc:derby://localhost:1527/var/druid/metadata.db;create=true
-        druid.metadata.storage.connector.host=localhost
-        druid.metadata.storage.connector.port=1527
-        druid.metadata.storage.connector.createTables=true
-    type: default
+     spec:
+       properties: |-
+         druid.metadata.storage.type=postgresql
+         druid.metadata.storage.connector.connectURI=jdbc:postgresql://druid-metadata.pgo.svc.cluster.local:5432/druid-metadata
+         druid.metadata.storage.connector.user=POSTGRES_ADMIN_USERNAME_PLACEHOLDER
+         druid.metadata.storage.connector.password=POSTGRES_ADMIN_PASSWORD_PLACEHOLDER
+         druid.metadata.storage.connector.createTables=true
+     type: default
   zookeeper:
     spec:
       properties: |-
-        druid.zk.service.host=tiny-cluster-zk-0.tiny-cluster-zk
+        druid.zk.service.host=tiny-cluster-zk-0.tiny-cluster-zk.default.svc.cluster.local, tiny-cluster-zk-1.tiny-cluster-zk.default.svc.cluster.local, tiny-cluster-zk-2.tiny-cluster-zk.default.svc.cluster.local
         druid.zk.paths.base=/druid
     type: default
   nodes:
@@ -122,14 +115,14 @@ spec:
           value: 6g
       podDisruptionBudgetSpec:
         maxUnavailable: 1
-      replicas: 1
+      replicas: 3
       resources:
         limits:
           cpu: 4
-          memory: 8Gi
+          memory: 16Gi
         requests:
           cpu: 4
-          memory: 8Gi
+          memory: 16Gi
       readinessProbe:
         initialDelaySeconds: 60
         periodSeconds: 10
@@ -154,7 +147,7 @@ spec:
       nodeType: coordinator
       podDisruptionBudgetSpec:
         maxUnavailable: 1
-      replicas: 1
+      replicas: 3
       resources:
         limits:
           cpu: 3
@@ -194,6 +187,7 @@ spec:
           druid.server.http.numThreads=50
           druid.coordinator.asOverlord.enabled=true
           druid.coordinator.asOverlord.overlordService=druid/overlord
+
     historical:
       druid.port: 8080
       kind: StatefulSet
@@ -201,7 +195,7 @@ spec:
       podDisruptionBudgetSpec:
         maxUnavailable: 1
       nodeConfigMountPath: /opt/druid/conf/druid/cluster/data/historical
-      replicas: 1
+      replicas: 3
       livenessProbe:
         initialDelaySeconds: 1800
         periodSeconds: 5
@@ -260,8 +254,15 @@ spec:
           name: historical-deep-volume
       volumes:
         - name: data-volume
-          persistentVolumeClaim:
-            claimName: druid-historical-data
+          volumeClaimTemplates:
+          - metadata:
+              name: data-volume
+            spec:
+              storageClassName: gp2
+              accessModes: [ "ReadWriteOnce" ]
+              resources:
+                requests:
+                  storage: 100Gi
         - name: historical-deep-volume
           persistentVolumeClaim:
             claimName: druid-data-volume
@@ -278,11 +279,11 @@ spec:
           value: 2048m
       podDisruptionBudgetSpec:
         maxUnavailable: 1
-      replicas: 1
+      replicas: 3
       resources:
         limits:
           cpu: 2
-          memory: 4Gi
+          memory: 8Gi
         requests:
           cpu: 2
           memory: 4Gi
@@ -318,8 +319,16 @@ spec:
           name: historical-deep-volume
       volumes:
         - name: data-volume
-          persistentVolumeClaim:
-            claimName: druid-middlemanager-data
+          volumeClaimTemplates:
+          - metadata:
+              name: data-volume
+            spec:
+              storageClassName: gp2
+              accessModes: [ "ReadWriteOnce" ]
+              resources:
+                requests:
+                  storage: 100Gi
+
         - name: historical-deep-volume
           persistentVolumeClaim:
             claimName: druid-data-volume
@@ -350,10 +359,10 @@ spec:
       resources:
         limits:
           cpu: 2
-          memory: 4Gi
+          memory: 3Gi
         requests:
           cpu: 2
-          memory: 4Gi
+          memory: 3Gi
       nodeType: router
       podDisruptionBudgetSpec:
         maxUnavailable: 1
@@ -378,4 +387,5 @@ spec:
             ports:
               - name: router-port
                 port: 8080
-                nodePort: 300
+                nodePort: 30007
+            type: NodePort
