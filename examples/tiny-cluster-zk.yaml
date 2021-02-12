@@ -22,7 +22,7 @@ metadata:
     zk_cluster: tiny-cluster-zk
   name: tiny-cluster-zk
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       zk_cluster: tiny-cluster-zk
@@ -52,10 +52,10 @@ spec:
           resources:
             limits:
               cpu: 1
-              memory: 512Mi
+              memory: 1Gi
             requests:
               cpu: 1
-              memory: 512Mi
+              memory: 1Gi
           volumeMounts:
             - mountPath: /data
               name: druid-test-zk-data
@@ -63,6 +63,23 @@ spec:
               name: druid-test-zk-data-log
       volumes:
         - name: druid-test-zk-data
-          emptyDir: {}
+          volumeClaimTemplates:
+          - metadata:
+              name: druid-test-zk-data
+            spec:
+              storageClassName: gp2
+              accessModes: [ "ReadWriteOnce" ]
+              resources:
+                requests:
+                  storage: 50Gi
+        
         - name: druid-test-zk-data-log
-          emptyDir: {}
+          volumeClaimTemplates:
+          - metadata:
+              name: druid-test-zk-data-log
+            spec:
+              storageClassName: gp2
+              accessModes: [ "ReadWriteOnce" ]
+              resources:
+                requests:
+                  storage: 10Gi
